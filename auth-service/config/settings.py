@@ -12,6 +12,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.auth",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "app",
 ]
@@ -27,9 +28,9 @@ ROOT_URLCONF = "config.urls"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "db"),
-        "USER": os.environ.get("DB_USER", "user"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", "password"),
+        "NAME": os.environ.get("DB_NAME", "authdb"),
+        "USER": os.environ.get("DB_USER", "authuser"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "authpass123"),
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
@@ -71,3 +72,4 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+AUTH_USER_MODEL = "app.User"
