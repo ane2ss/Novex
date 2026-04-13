@@ -27,9 +27,9 @@ ROOT_URLCONF = "config.urls"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "db"),
-        "USER": os.environ.get("DB_USER", "user"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", "password"),
+        "NAME": os.environ.get("DB_NAME", "notificationdb"),
+        "USER": os.environ.get("DB_USER", "notificationuser"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "notificationpass123"),
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
@@ -37,7 +37,7 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "app.authentication.JWTStatelessAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -66,8 +66,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost",
 ]
 CORS_ALLOW_CREDENTIALS = True
-
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
