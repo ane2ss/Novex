@@ -6,9 +6,10 @@ from django.contrib.auth.models import AnonymousUser
 
 class SimpleUser:
     """A minimal user object built from JWT claims — no DB lookup needed."""
-    def __init__(self, user_id):
+    def __init__(self, user_id, username=None):
         self.id = user_id
         self.pk = user_id
+        self.username = username
         self.is_authenticated = True
         self.is_active = True
 
@@ -23,8 +24,9 @@ class JWTStatelessAuthentication(authentication.BaseAuthentication):
             jwt_auth = JWTAuthentication()
             validated_token = jwt_auth.get_validated_token(token_str)
             user_id = validated_token.get("user_id")
+            username = validated_token.get("username")
             if not user_id:
                 return None
-            return (SimpleUser(int(user_id)), validated_token)
+            return (SimpleUser(int(user_id), username), validated_token)
         except (InvalidToken, TokenError):
             return None

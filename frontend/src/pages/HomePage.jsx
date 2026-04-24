@@ -1,130 +1,233 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import ProjectCard from '../components/ProjectCard';
+import { SkeletonList } from '../components/Skeletons';
 
-function HomePage() {
+export default function HomePage({ user }) {
+    const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({
-        search: '', category: '', status: '', level: '', looking_for_teammates: '',
-    });
+    const [upvotedIds, setUpvotedIds] = useState([]);
+    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const params = {};
-                Object.entries(filters).forEach(([k, v]) => { if (v) params[k] = v; });
-                const res = await api.getProjects(params);
-                setProjects(res.data || res.results || res || []);
-            } catch (err) {
-                console.error('Fetch projects error:', err);
-                setProjects([]);
-            }
-            setLoading(false);
-        };
-        fetchData();
-    }, [filters]);
+    // Filters
+    const [search, setSearch] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState('');
+    const [selectedLevel, setSelectedLevel] = useState('');
+    const [sortBy, setSortBy] = useState('popular');
 
-    useEffect(() => {
-        api.getCategories().then(res => setCategories(res.data || [])).catch(() => { });
-    }, []);
-
-    const handleFilterChange = (key, value) => {
+    const fetchProjects = useCallback(async () => {
         setLoading(true);
-        setFilters(prev => ({ ...prev, [key]: value }));
+        setError(null);
+        try {
+            const params = {};
+            if (search) params.search = search;
+            if (selectedCategory) params.category = selectedCategory;
+            if (selectedStatus) params.status = selectedStatus;
+            if (selectedLevel) params.level = selectedLevel;
+            if (sortBy) params.sort = sortBy;
+
+            const res = await api.getProjects(params);
+            setProjects(res.data || res.results || res || []);
+        } catch (err) {
+            setError('Failed to load projects');
+            setProjects([]);
+        }
+        setLoading(false);
+    }, [search, selectedCategory, selectedStatus, selectedLevel, sortBy]);
+
+    useEffect(() => {
+        fetchProjects();
+    }, [fetchProjects]);
+
+    useEffect(() => {
+        api.getCategories().then(res => {
+            setCategories(res.data || res || []);
+        }).catch(() => { });
+
+        if (user) {
+            api.getMyUpvotes().then(res => {
+                setUpvotedIds(res.data || []);
+            }).catch(() => { });
+        }
+    }, [user]);
+
+    // Debounce search
+    const [searchInput, setSearchInput] = useState('');
+    useEffect(() => {
+        const timer = setTimeout(() => setSearch(searchInput), 400);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
+    const statusOptions = ['', 'completed', 'ongoing', 'idea', 'archived'];
+    const levelOptions = ['', 'beginner', 'intermediate', 'advanced'];
+
+    const categoryIcons = {
+        'ai': 'category',
+        'web': 'web',
+        'mobile': 'smartphone',
+        'data': 'analytics',
+        'security': 'security',
+        'iot': 'sensors',
+        'game': 'sports_esports',
+    };
+
+    const getCategoryIcon = (name) => {
+        if (!name) return 'grid_view';
+        const lower = name.toLowerCase();
+        for (const [key, icon] of Object.entries(categoryIcons)) {
+            if (lower.includes(key)) return icon;
+        }
+        return 'category';
     };
 
     return (
-        <div className="page-container">
-            <div className="hero-section">
-                <h1 className="hero-title">
-                    Discover <span className="gradient-text">Student Projects</span>
-                </h1>
-                <p className="hero-subtitle">
-                    Explore innovative projects, find collaborators, and showcase your work to the world.
-                </p>
-                <div className="search-bar">
-                    <span className="search-icon">🔍</span>
-                    <input
-                        type="text"
-                        placeholder="Search projects by name or tag..."
-                        value={filters.search}
-                        onChange={e => handleFilterChange('search', e.target.value)}
-                        className="search-input"
-                    />
-                </div>
-            </div>
+        <div className="container" style={{ paddingTop: '1.5rem' }}>
+            <div className="home-layout">
+                {/* Sidebar */}
+                <aside className="sidebar">
+                    <h2 className="sidebar-title">Filters</h2>
+                    <p className="sidebar-subtitle">Refine your discovery</p>
 
-            <div className="filters-bar">
-                <select
-                    value={filters.category}
-                    onChange={e => handleFilterChange('category', e.target.value)}
-                    className="filter-select"
-                >
-                    <option value="">All Categories</option>
-                    {categories.map(c => (
-                        <option key={c.id} value={c.slug}>{c.name}</option>
-                    ))}
-                </select>
+                    <div className="sidebar-section">
+                        <div className="sidebar-section-label">Category</div>
+                        <button
+                            className={`sidebar-btn ${selectedCategory === '' ? 'active' : ''}`}
+                            onClick={() => setSelectedCategory('')}
+                        >
+                            <span className="material-symbols-outlined">grid_view</span>
+                            All Projects
+                        </button>
+                        {categories.map(cat => (
+                            <button
+                                key={cat.id || cat.name}
+                                className={`sidebar-btn ${selectedCategory === (cat.id || cat.name) ? 'active' : ''}`}
+                                onClick={() => setSelectedCategory(cat.id || cat.name)}
+                            >
+                                <span className="material-symbols-outlined">{getCategoryIcon(cat.name)}</span>
+                                {cat.name}
+                            </button>
+                        ))}
+                    </div>
 
-                <select
-                    value={filters.status}
-                    onChange={e => handleFilterChange('status', e.target.value)}
-                    className="filter-select"
-                >
-                    <option value="">All Statuses</option>
-                    <option value="idea">💡 Idea</option>
-                    <option value="in_progress">🔨 In Progress</option>
-                    <option value="launched">🚀 Launched</option>
-                </select>
+                    <div className="sidebar-section">
+                        <div className="sidebar-section-label">Project Status</div>
+                        {statusOptions.filter(s => s).map(s => (
+                            <button
+                                key={s}
+                                className={`sidebar-btn ${selectedStatus === s ? 'active' : ''}`}
+                                onClick={() => setSelectedStatus(selectedStatus === s ? '' : s)}
+                            >
+                                <span className="material-symbols-outlined">
+                                    {s === 'completed' ? 'check_circle' : s === 'ongoing' ? 'pending' : s === 'idea' ? 'lightbulb' : 'archive'}
+                                </span>
+                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                            </button>
+                        ))}
+                    </div>
 
-                <select
-                    value={filters.level}
-                    onChange={e => handleFilterChange('level', e.target.value)}
-                    className="filter-select"
-                >
-                    <option value="">All Levels</option>
-                    <option value="beginner">🌱 Beginner</option>
-                    <option value="intermediate">⚡ Intermediate</option>
-                    <option value="advanced">🔥 Advanced</option>
-                </select>
+                    <div className="sidebar-section">
+                        <div className="sidebar-section-label">Difficulty</div>
+                        {levelOptions.filter(l => l).map(l => (
+                            <button
+                                key={l}
+                                className={`sidebar-btn ${selectedLevel === l ? 'active' : ''}`}
+                                onClick={() => setSelectedLevel(selectedLevel === l ? '' : l)}
+                            >
+                                <span className="material-symbols-outlined">speed</span>
+                                {l.charAt(0).toUpperCase() + l.slice(1)}
+                            </button>
+                        ))}
+                    </div>
 
-                <label className="filter-checkbox">
-                    <input
-                        type="checkbox"
-                        checked={filters.looking_for_teammates === 'true'}
-                        onChange={e => handleFilterChange('looking_for_teammates', e.target.checked ? 'true' : '')}
-                    />
-                    <span>Recruiting</span>
-                </label>
-            </div>
+                    <div className="sidebar-footer">
+                        <button className="sidebar-btn" onClick={() => { setSelectedCategory(''); setSelectedStatus(''); setSelectedLevel(''); }}>
+                            <span className="material-symbols-outlined">restart_alt</span>
+                            Reset Filters
+                        </button>
+                    </div>
+                </aside>
 
-            {loading ? (
-                <div className="projects-grid">
-                    {[...Array(6)].map((_, i) => (
-                        <div key={i} className="skeleton-card">
-                            <div className="skeleton-block skeleton-cover"></div>
-                            <div className="skeleton-block skeleton-title"></div>
-                            <div className="skeleton-block skeleton-text"></div>
+                {/* Main Content */}
+                <main className="main-content">
+                    <header className="page-header">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div>
+                                <h1 className="page-title">Today's Spotlight</h1>
+                                <p className="page-subtitle">Curated digital masterpieces by the next generation of creators.</p>
+                            </div>
+                            <div className="sort-tabs">
+                                <button className={`sort-tab ${sortBy === 'popular' ? 'active' : ''}`} onClick={() => setSortBy('popular')}>Popular</button>
+                                <button className={`sort-tab ${sortBy === 'newest' ? 'active' : ''}`} onClick={() => setSortBy('newest')}>Newest</button>
+                            </div>
                         </div>
-                    ))}
-                </div>
-            ) : projects.length === 0 ? (
-                <div className="empty-state">
-                    <div className="empty-icon">📭</div>
-                    <h2>No projects found</h2>
-                    <p>Try adjusting your filters or be the first to create a project!</p>
-                </div>
-            ) : (
-                <div className="projects-grid">
-                    {projects.map(project => (
-                        <ProjectCard key={project.id} project={project} />
-                    ))}
-                </div>
+
+                        {/* Search bar for mobile / inline */}
+                        <div style={{
+                            display: 'flex', alignItems: 'center', background: 'var(--surface-container-lowest)',
+                            borderRadius: 'var(--radius-full)', padding: '0.5rem 1rem', gap: '0.5rem', marginTop: '1.5rem',
+                            border: '1px solid rgba(70, 69, 85, 0.2)',
+                        }}>
+                            <span className="material-symbols-outlined" style={{ color: 'var(--outline)', fontSize: '1.25rem' }}>search</span>
+                            <input
+                                type="text"
+                                placeholder="Search projects..."
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                                style={{
+                                    background: 'transparent', border: 'none', outline: 'none',
+                                    color: 'var(--on-surface)', fontSize: '0.875rem', fontFamily: 'inherit', flex: 1,
+                                }}
+                            />
+                            {searchInput && (
+                                <button onClick={() => setSearchInput('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--outline)' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>close</span>
+                                </button>
+                            )}
+                        </div>
+                    </header>
+
+                    {/* Projects List */}
+                    {loading ? (
+                        <SkeletonList count={4} />
+                    ) : error ? (
+                        <div className="error-state">
+                            <span className="material-symbols-outlined">error</span>
+                            <h3>Something went wrong</h3>
+                            <p>{error}</p>
+                            <button className="btn btn-primary" onClick={fetchProjects}>Try Again</button>
+                        </div>
+                    ) : projects.length === 0 ? (
+                        <div className="empty-state">
+                            <div className="empty-icon">
+                                <span className="material-symbols-outlined" style={{ fontSize: '4rem' }}>search_off</span>
+                            </div>
+                            <h3>No projects found</h3>
+                            <p>Try adjusting your filters or search terms.</p>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {projects.map(project => (
+                                <ProjectCard
+                                    key={project.id}
+                                    project={{ ...project, has_upvoted: upvotedIds.includes(project.id) }}
+                                    user={user}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </main>
+            </div>
+
+            {/* FAB */}
+            {user && (
+                <button className="fab" onClick={() => navigate('/submit')} id="fab-create">
+                    <span className="material-symbols-outlined">add</span>
+                </button>
             )}
         </div>
     );
 }
-
-export default HomePage;

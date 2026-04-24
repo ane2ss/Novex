@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -26,9 +27,21 @@ class ProjectListView(APIView):
         if level:
             projects = projects.filter(level=level)
         if search:
-            projects = projects.filter(title__icontains=search) | projects.filter(tags__icontains=search)
+            projects = projects.filter(Q(title__icontains=search) | Q(tags__icontains=search))
+        
+        owner = request.query_params.get("owner")
+        if owner:
+            projects = projects.filter(Q(owner_id=owner) | Q(team_members__user_id=owner)).distinct()
+
         if looking:
             projects = projects.filter(looking_for_teammates=True)
+
+        # sorting
+        sort = request.query_params.get("sort", "popular")
+        if sort == "newest":
+            projects = projects.order_by("-created_at")
+        else:  # default to popular
+            projects = projects.order_by("-upvote_count", "-created_at")
 
         serializer = ProjectSerializer(projects, many=True)
         return Response({"success": True, "data": serializer.data})

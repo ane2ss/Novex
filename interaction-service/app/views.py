@@ -39,10 +39,15 @@ class UpvoteView(APIView):
     def post(self, request, project_id):
         if Upvote.objects.filter(user_id=request.user.id, project_id=project_id).exists():
             return Response({"success": False, "error": "Already upvoted."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        project_owner_id = request.data.get("project_owner_id")
         upvote = Upvote.objects.create(user_id=request.user.id, project_id=project_id)
+        
         publish_event("upvote", {
             "project_id": project_id,
             "user_id": request.user.id,
+            "username": request.user.username,
+            "project_owner_id": project_owner_id,
         })
         return Response({"success": True, "data": UpvoteSerializer(upvote).data}, status=status.HTTP_201_CREATED)
 
@@ -51,7 +56,19 @@ class UpvoteView(APIView):
         if not upvote:
             return Response({"success": False, "error": "Upvote not found."}, status=status.HTTP_404_NOT_FOUND)
         upvote.delete()
+        publish_event("upvote_removed", {
+            "project_id": project_id,
+            "user_id": request.user.id,
+        })
         return Response({"success": True, "data": "Upvote removed."})
+ 
+ 
+class MyUpvotesView(APIView):
+    permission_classes = [IsAuthenticated]
+ 
+    def get(self, request):
+        upvotes = Upvote.objects.filter(user_id=request.user.id).values_list("project_id", flat=True)
+        return Response({"success": True, "data": list(upvotes)})
 
 
 class CommentListView(APIView):
@@ -68,10 +85,15 @@ class CommentListView(APIView):
     def post(self, request, project_id):
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
-            comment = serializer.save(user_id=request.user.id, project_id=project_id)
+            comment = serializer.save(
+                user_id=request.user.id,
+                user_username=request.user.username,
+                project_id=project_id
+            )
             publish_event("comment", {
                 "project_id": project_id,
                 "user_id": request.user.id,
+                "username": request.user.username,
                 "comment_id": comment.id,
             })
             return Response({"success": True, "data": CommentSerializer(comment).data}, status=status.HTTP_201_CREATED)
@@ -108,6 +130,7 @@ class JoinRequestView(APIView):
             publish_event("join_request", {
                 "project_id": project_id,
                 "user_id": request.user.id,
+                "username": request.user.username,
                 "project_owner_id": project_owner_id,
             })
             return Response({"success": True, "data": JoinRequestSerializer(join_request).data}, status=status.HTTP_201_CREATED)
