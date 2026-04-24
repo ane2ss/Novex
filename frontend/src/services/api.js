@@ -53,10 +53,12 @@ export const api = {
         projectClient.get('/categories/').then(r => r.data),
 
     // Interactions
-    upvote: (projectId) =>
-        interactionClient.post(`/upvote/${projectId}/`).then(r => r.data),
+    upvote: (projectId, ownerId) =>
+        interactionClient.post(`/upvote/${projectId}/`, { project_owner_id: ownerId }).then(r => r.data),
     removeUpvote: (projectId) =>
         interactionClient.delete(`/upvote/${projectId}/`).then(r => r.data),
+    getMyUpvotes: () =>
+        interactionClient.get('/upvotes/mine/').then(r => r.data),
     getComments: (projectId) =>
         interactionClient.get(`/comments/${projectId}/`).then(r => r.data),
     addComment: (projectId, data) =>

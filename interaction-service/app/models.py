@@ -12,6 +12,7 @@ class Upvote(models.Model):
 
 class Comment(models.Model):
     user_id = models.IntegerField()
+    user_username = models.CharField(max_length=150, blank=True, null=True)
     project_id = models.IntegerField()
     content = models.TextField()
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")

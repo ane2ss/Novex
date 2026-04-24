@@ -12,12 +12,13 @@ from app.models import Notification
 
 
 def get_message(event_type, data):
+    username = data.get("username", "Someone")
     if event_type == "upvote":
-        return f"Someone upvoted your project!", data.get("project_id")
+        return f"{username} upvoted your project!", data.get("project_id")
     elif event_type == "comment":
-        return f"Someone commented on your project!", data.get("project_id")
+        return f"{username} commented on your project!", data.get("project_id")
     elif event_type == "join_request":
-        return f"Someone wants to join your project!", data.get("project_id")
+        return f"{username} wants to join your project!", data.get("project_id")
     elif event_type == "join_request_update":
         s = data.get("status")
         return f"Your join request was {s}!", data.get("project_id")
