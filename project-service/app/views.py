@@ -115,6 +115,22 @@ class CategoryListView(APIView):
         return Response({"success": True, "data": serializer.data})
 
 
+class UpvoteCountView(APIView):
+    """Internal endpoint called by interaction-service to sync upvote counts."""
+    permission_classes = [AllowAny]
+
+    def patch(self, request, pk):
+        try:
+            project = Project.objects.get(pk=pk)
+        except Project.DoesNotExist:
+            return Response({"success": False, "error": "Project not found."}, status=status.HTTP_404_NOT_FOUND)
+        count = request.data.get("upvote_count")
+        if count is not None:
+            project.upvote_count = int(count)
+            project.save(update_fields=["upvote_count"])
+        return Response({"success": True, "data": {"upvote_count": project.upvote_count}})
+
+
 class HealthView(APIView):
     permission_classes = [AllowAny]
 

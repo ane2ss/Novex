@@ -23,7 +23,7 @@ export default function Footer() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '2rem', marginBottom: '4rem' }}>
                     {/* Brand */}
                     <div>
-                        <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', display: 'block', marginBottom: '1rem', letterSpacing: '-0.03em' }}>Novex</span>
+                        <img src="/logo.png" alt="Novex" style={{ height: '8rem', width: 'auto', objectFit: 'contain', marginBottom: '1rem' }} />
                         <p style={{ fontSize: '0.875rem', color: '#64748b', lineHeight: 1.7 }}>
                             Defining the next era of collaborative student engineering and design excellence.
                         </p>

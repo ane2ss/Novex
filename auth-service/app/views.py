@@ -18,7 +18,9 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            refresh = RefreshToken.for_user(user)
+            # Use MyTokenObtainPairSerializer so the token contains the username claim
+            # (same as the login endpoint) — this is critical for cross-service auth
+            refresh = MyTokenObtainPairSerializer.get_token(user)
             return Response({
                 "success": True,
                 "data": {

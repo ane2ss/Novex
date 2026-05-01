@@ -36,6 +36,7 @@ class JoinRequest(models.Model):
         ("other", "Other"),
     ]
     user_id = models.IntegerField()
+    user_username = models.CharField(max_length=150, blank=True, null=True)
     project_id = models.IntegerField()
     project_owner_id = models.IntegerField()
     message = models.TextField(blank=True)

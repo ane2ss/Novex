@@ -21,16 +21,31 @@ def publish_event(event_type, data):
             )
         )
         channel = connection.channel()
-        channel.queue_declare(queue="notifications", durable=True)
+        channel.exchange_declare(exchange='events', exchange_type='fanout', durable=True)
         channel.basic_publish(
-            exchange="",
-            routing_key="notifications",
+            exchange="events",
+            routing_key="",
             body=json.dumps({"type": event_type, "data": data}),
             properties=pika.BasicProperties(delivery_mode=2),
         )
         connection.close()
     except Exception as e:
         print(f"RabbitMQ publish failed: {e}")
+
+
+def sync_upvote_count(project_id):
+    """Tell the project-service the current upvote count for a project."""
+    try:
+        count = Upvote.objects.filter(project_id=project_id).count()
+        project_url = os.environ.get("PROJECT_SERVICE_URL", "http://localhost:8002")
+        import requests as req_lib
+        req_lib.patch(
+            f"{project_url}/api/projects/{project_id}/upvote-count/",
+            json={"upvote_count": count},
+            timeout=3,
+        )
+    except Exception as e:
+        print(f"Failed to sync upvote count: {e}")
 
 
 class UpvoteView(APIView):
@@ -42,6 +57,7 @@ class UpvoteView(APIView):
         
         project_owner_id = request.data.get("project_owner_id")
         upvote = Upvote.objects.create(user_id=request.user.id, project_id=project_id)
+        sync_upvote_count(project_id)
         
         publish_event("upvote", {
             "project_id": project_id,
@@ -56,6 +72,7 @@ class UpvoteView(APIView):
         if not upvote:
             return Response({"success": False, "error": "Upvote not found."}, status=status.HTTP_404_NOT_FOUND)
         upvote.delete()
+        sync_upvote_count(project_id)
         publish_event("upvote_removed", {
             "project_id": project_id,
             "user_id": request.user.id,
@@ -90,11 +107,13 @@ class CommentListView(APIView):
                 user_username=request.user.username,
                 project_id=project_id
             )
+            project_owner_id = request.data.get("project_owner_id")
             publish_event("comment", {
                 "project_id": project_id,
                 "user_id": request.user.id,
                 "username": request.user.username,
                 "comment_id": comment.id,
+                "project_owner_id": project_owner_id,
             })
             return Response({"success": True, "data": CommentSerializer(comment).data}, status=status.HTTP_201_CREATED)
         return Response({"success": False, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
@@ -124,6 +143,7 @@ class JoinRequestView(APIView):
         if serializer.is_valid():
             join_request = serializer.save(
                 user_id=request.user.id,
+                user_username=request.user.username,
                 project_id=project_id,
                 project_owner_id=project_owner_id,
             )

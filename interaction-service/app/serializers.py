@@ -25,5 +25,5 @@ class CommentSerializer(serializers.ModelSerializer):
 class JoinRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = JoinRequest
-        fields = ["id", "user_id", "project_id", "project_owner_id", "message", "role", "status", "created_at"]
-        read_only_fields = ["user_id", "project_owner_id", "status", "created_at"]
+        fields = ["id", "user_id", "user_username", "project_id", "project_owner_id", "message", "role", "status", "created_at"]
+        read_only_fields = ["user_id", "user_username", "project_id", "project_owner_id", "status", "created_at"]

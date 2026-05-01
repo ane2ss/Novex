@@ -41,13 +41,8 @@ export default function ProfilePage({ user }) {
         if (!profileId) return;
         setProjectsLoading(true);
         try {
-            if (isOwn) {
-                const res = await api.getMyProjects();
-                setProjects(res.data || res || []);
-            } else {
-                const res = await api.getProjects({ owner: profileId });
-                setProjects(res.data || res.results || res || []);
-            }
+            const res = await api.getProjects({ owner: profileId });
+            setProjects(res.data || res.results || res || []);
         } catch {
             setProjects([]);
         }
