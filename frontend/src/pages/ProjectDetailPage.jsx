@@ -105,7 +105,10 @@ export default function ProjectDetailPage({ user }) {
         if (!user) { navigate('/login'); return; }
         setSubmittingComment(true);
         try {
-            const data = { content: commentText };
+            const data = {
+                content: commentText,
+                project_owner_id: project?.owner_id || project?.owner,
+            };
             if (replyTo) data.parent = replyTo;
             await api.addComment(id, data);
             setCommentText('');
@@ -168,8 +171,8 @@ export default function ProjectDetailPage({ user }) {
         }
     };
 
-    const isOwner = user && project && (project.owner === user.id || project.owner_id === user.id);
-    const isMember = project?.team_members?.some(m => m.id === user?.id || m.user_id === user?.id);
+    const isOwner = user && project && (Number(project.owner) === Number(user.id) || Number(project.owner_id) === Number(user.id));
+    const isMember = project?.team_members?.some(m => Number(m.id) === Number(user?.id) || Number(m.user_id) === Number(user?.id));
     const coverImage = project?.cover_image || project?.image || null;
     const placeholder = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1200" height="400"%3E%3Crect width="1200" height="400" fill="%23171f33"/%3E%3Ctext x="600" y="210" text-anchor="middle" fill="%23918fa1" font-size="24" font-family="sans-serif"%3EProject Cover%3C/text%3E%3C/svg%3E';
 
@@ -187,239 +190,275 @@ export default function ProjectDetailPage({ user }) {
     );
 
     return (
-        <div className="container" style={{ paddingTop: '1.5rem', paddingBottom: '5rem' }}>
-            {/* Hero */}
-            <div className="detail-hero">
-                <div className="detail-hero-bg">
-                    <img src={coverImage || placeholder} alt={project.title} onError={(e) => { e.target.src = placeholder; }} />
-                </div>
-                <div className="detail-hero-overlay" />
-                <div className="detail-hero-content">
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                        {project.category_name && <span className="tag tag-category">{project.category_name}</span>}
-                        {project.status && <span className="tag tag-status">{project.status}</span>}
-                    </div>
-                    <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 3.75rem)', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '1rem' }}>{project.title}</h1>
-                    <p style={{ fontSize: '1.25rem', color: 'var(--on-surface-variant)', fontWeight: 300, maxWidth: '42rem' }}>
-                        {project.short_description || (project.description && project.description.substring(0, 200))}
-                    </p>
-                </div>
+        <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+            {/* ── Galaxy Background ── */}
+            <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                {/* Base deep space */}
+                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 20% 20%, rgba(30,0,80,0.45) 0%, transparent 60%), radial-gradient(ellipse at 80% 70%, rgba(0,30,80,0.4) 0%, transparent 55%), var(--background)' }} />
+                {/* Nebula orbs */}
+                <div style={{ position: 'absolute', top: '-15%', left: '-10%', width: '55vw', height: '55vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(74,64,224,0.2) 0%, rgba(124,58,237,0.08) 50%, transparent 70%)', filter: 'blur(60px)', animation: 'galaxy-drift-1 18s ease-in-out infinite alternate' }} />
+                <div style={{ position: 'absolute', bottom: '-10%', right: '-15%', width: '50vw', height: '50vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.14) 0%, rgba(16,185,129,0.06) 50%, transparent 70%)', filter: 'blur(70px)', animation: 'galaxy-drift-2 22s ease-in-out infinite alternate' }} />
+                <div style={{ position: 'absolute', top: '40%', right: '20%', width: '35vw', height: '35vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(192,38,211,0.12) 0%, transparent 65%)', filter: 'blur(50px)', animation: 'galaxy-drift-3 16s ease-in-out infinite alternate' }} />
+                <div style={{ position: 'absolute', top: '10%', right: '5%', width: '25vw', height: '25vw', borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.07) 0%, transparent 60%)', filter: 'blur(40px)', animation: 'galaxy-drift-1 25s ease-in-out infinite alternate-reverse' }} />
+                {/* Star field SVG */}
+                <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.6 }} xmlns="http://www.w3.org/2000/svg">
+                    {Array.from({ length: 80 }).map((_, i) => (
+                        <circle
+                            key={i}
+                            cx={`${(i * 37.3) % 100}%`}
+                            cy={`${(i * 23.7 + 10) % 100}%`}
+                            r={i % 5 === 0 ? 1.5 : 0.8}
+                            fill="white"
+                            opacity={0.1 + (i % 4) * 0.12}
+                            style={{ animation: `star-twinkle ${2 + (i % 4)}s ease-in-out infinite alternate`, animationDelay: `${(i * 0.3) % 4}s` }}
+                        />
+                    ))}
+                </svg>
             </div>
+            <style>{`
+                @keyframes galaxy-drift-1 { from { transform: translate(0, 0) scale(1); } to { transform: translate(4%, 3%) scale(1.08); } }
+                @keyframes galaxy-drift-2 { from { transform: translate(0, 0) scale(1); } to { transform: translate(-5%, -4%) scale(1.12); } }
+                @keyframes galaxy-drift-3 { from { transform: translate(0, 0) scale(1); } to { transform: translate(3%, -5%) scale(0.92); } }
+                @keyframes star-twinkle { from { opacity: 0.05; } to { opacity: 0.55; } }
+            `}</style>
 
-            <div className="detail-grid">
-                {/* Main column */}
-                <div>
-                    {/* Description */}
-                    <section className="detail-section">
-                        <h2 className="detail-section-title">
-                            <span className="line" />
-                            Project Vision
-                        </h2>
-                        <div className="detail-body">
-                            {(project.description || '').split('\n').map((p, i) => p.trim() && <p key={i}>{p}</p>)}
+            <div className="container" style={{ paddingTop: '1.5rem', paddingBottom: '5rem', position: 'relative', zIndex: 1 }}>
+
+                {/* Hero */}
+                <div className="detail-hero">
+                    <div className="detail-hero-bg">
+                        <img src={coverImage || placeholder} alt={project.title} onError={(e) => { e.target.src = placeholder; }} />
+                    </div>
+                    <div className="detail-hero-overlay" />
+                    <div className="detail-hero-content">
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                            {project.category_name && <span className="tag tag-category">{project.category_name}</span>}
+                            {project.status && <span className="tag tag-status">{project.status}</span>}
                         </div>
-                    </section>
+                        <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 3.75rem)', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '1rem' }}>{project.title}</h1>
+                        <p style={{ fontSize: '1.25rem', color: 'var(--on-surface-variant)', fontWeight: 300, maxWidth: '42rem' }}>
+                            {project.short_description || (project.description && project.description.substring(0, 200))}
+                        </p>
+                    </div>
+                </div>
 
-                    {/* Video embed */}
-                    {project.video_url && (
+                <div className="detail-grid">
+                    {/* Main column */}
+                    <div>
+                        {/* Description */}
                         <section className="detail-section">
                             <h2 className="detail-section-title">
                                 <span className="line" />
-                                Demo Video
+                                Project Vision
                             </h2>
-                            <div style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--surface-container-lowest)', aspectRatio: '16/9' }}>
-                                <iframe
-                                    src={project.video_url.replace('watch?v=', 'embed/')}
-                                    title="Project Demo"
-                                    style={{ width: '100%', height: '100%', border: 'none' }}
-                                    allowFullScreen
-                                />
+                            <div className="detail-body">
+                                {(project.description || '').split('\n').map((p, i) => p.trim() && <p key={i}>{p}</p>)}
                             </div>
                         </section>
-                    )}
 
-                    {/* Comments */}
-                    <section className="detail-section">
-                        <h2 className="detail-section-title">
-                            <span className="line" />
-                            Discussion ({comments.length})
-                        </h2>
+                        {/* Video embed */}
+                        {project.video_url && (
+                            <section className="detail-section">
+                                <h2 className="detail-section-title">
+                                    <span className="line" />
+                                    Demo Video
+                                </h2>
+                                <div style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: 'var(--surface-container-lowest)', aspectRatio: '16/9' }}>
+                                    <iframe
+                                        src={project.video_url.replace('watch?v=', 'embed/')}
+                                        title="Project Demo"
+                                        style={{ width: '100%', height: '100%', border: 'none' }}
+                                        allowFullScreen
+                                    />
+                                </div>
+                            </section>
+                        )}
 
-                        {/* Comment input */}
-                        {user && (
-                            <form onSubmit={handleComment}>
-                                <div className="comment-input-box">
-                                    <div className="comment-avatar">
-                                        <span className="material-symbols-outlined">person</span>
-                                    </div>
-                                    <div className="comment-input-area">
-                                        <textarea
-                                            className="comment-textarea"
-                                            placeholder="Join the discussion..."
-                                            rows={2}
-                                            value={commentText}
-                                            onChange={(e) => setCommentText(e.target.value)}
-                                        />
-                                        <div className="comment-actions">
-                                            <button type="submit" className="btn btn-primary btn-sm" disabled={submittingComment || !commentText.trim()}>
-                                                {submittingComment ? <div className="spinner" style={{ width: '1rem', height: '1rem' }} /> : 'Post Comment'}
-                                            </button>
+                        {/* Comments */}
+                        <section className="detail-section">
+                            <h2 className="detail-section-title">
+                                <span className="line" />
+                                Discussion ({comments.length})
+                            </h2>
+
+                            {/* Comment input */}
+                            {user && (
+                                <form onSubmit={handleComment}>
+                                    <div className="comment-input-box">
+                                        <div className="comment-avatar">
+                                            <span className="material-symbols-outlined">person</span>
                                         </div>
-                                    </div>
-                                </div>
-                            </form>
-                        )}
-
-                        {/* Comments list */}
-                        {commentsLoading ? (
-                            <div className="loading-container"><div className="spinner" /></div>
-                        ) : comments.length === 0 ? (
-                            <div className="empty-state" style={{ padding: '2rem' }}>
-                                <p>No comments yet. Be the first to share your thoughts!</p>
-                            </div>
-                        ) : (
-                            <div>
-                                {comments.map(comment => (
-                                    <CommentItem
-                                        key={comment.id}
-                                        comment={comment}
-                                        user={user}
-                                        project={project}
-                                        onDelete={handleDeleteComment}
-                                        onReply={(id) => { setReplyTo(id); document.querySelector('.comment-textarea')?.focus(); }}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </section>
-                </div>
-
-                {/* Sidebar */}
-                <aside>
-                    {/* Status card */}
-                    <div className="sidebar-card">
-                        <div className="stat-row">
-                            <span className="stat-label">Status</span>
-                            <span className="status-badge-active">
-                                <span className="status-pulse" />
-                                {(project.status || 'ACTIVE').toUpperCase()}
-                            </span>
-                        </div>
-                        {project.level && (
-                            <div className="stat-row">
-                                <span className="stat-label">Difficulty</span>
-                                <span className="stat-value">{project.level}</span>
-                            </div>
-                        )}
-                        {project.github_url && (
-                            <div className="stat-row">
-                                <span className="stat-label">GitHub</span>
-                                <a href={project.github_url} target="_blank" rel="noopener noreferrer" className="stat-value" style={{ color: 'var(--primary)' }}>
-                                    View Repo ↗
-                                </a>
-                            </div>
-                        )}
-                        <div style={{ paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <motion.button
-                                className={`btn btn-primary btn-full ${upvoteAnimating ? 'upvote-animate' : ''}`}
-                                onClick={handleUpvote}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                <span className="material-symbols-outlined" style={{ fontVariationSettings: upvoted ? "'FILL' 1" : "'FILL' 0" }}>star</span>
-                                {upvoted ? 'Upvoted' : 'Star Project'} ({upvoteCount})
-                            </motion.button>
-
-                            {isOwner && (
-                                <>
-                                    <button className="btn btn-outline btn-full" onClick={() => navigate(`/submit?edit=${id}`)}>
-                                        <span className="material-symbols-outlined">edit</span> Edit Project
-                                    </button>
-                                    <button className="btn btn-danger btn-full btn-sm" onClick={handleDelete}>
-                                        <span className="material-symbols-outlined">delete</span> Delete
-                                    </button>
-                                </>
-                            )}
-
-                            {user && !isOwner && !isMember && (
-                                <div style={{ marginTop: '0.5rem' }}>
-                                    <textarea
-                                        className="form-textarea"
-                                        placeholder="Why do you want to join?"
-                                        value={joinMessage}
-                                        onChange={(e) => setJoinMessage(e.target.value)}
-                                        rows={2}
-                                        style={{ marginBottom: '0.5rem', minHeight: '80px' }}
-                                    />
-                                    <button className="btn btn-outline btn-full" onClick={handleJoin} disabled={joiningLoading}>
-                                        {joiningLoading ? <div className="spinner" style={{ width: '1rem', height: '1rem' }} /> : (
-                                            <>
-                                                <span className="material-symbols-outlined">group_add</span> Request to Join
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            )}
-
-                            {isOwner && pendingRequests.length > 0 && (
-                                <div style={{ marginTop: '1.5rem' }}>
-                                    <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--outline)', marginBottom: '0.75rem' }}>Pending Requests</h4>
-                                    {pendingRequests.map(req => (
-                                        <div key={req.id} className="sidebar-card" style={{ padding: '0.75rem', marginBottom: '0.5rem', background: 'rgba(255,255,255,0.02)' }}>
-                                            <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>User #{req.user_id}</div>
-                                            <p style={{ fontSize: '0.75rem', color: 'var(--outline)', marginBottom: '0.5rem' }}>{req.message}</p>
-                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <button className="btn btn-primary btn-sm" style={{ flex: 1, fontSize: '0.7rem' }} onClick={() => handleRequestAction(req.id, 'accepted')}>Accept</button>
-                                                <button className="btn btn-outline btn-sm" style={{ flex: 1, fontSize: '0.7rem' }} onClick={() => handleRequestAction(req.id, 'declined')}>Reject</button>
+                                        <div className="comment-input-area">
+                                            <textarea
+                                                className="comment-textarea"
+                                                placeholder="Join the discussion..."
+                                                rows={2}
+                                                value={commentText}
+                                                onChange={(e) => setCommentText(e.target.value)}
+                                            />
+                                            <div className="comment-actions">
+                                                <button type="submit" className="btn btn-primary btn-sm" disabled={submittingComment || !commentText.trim()}>
+                                                    {submittingComment ? <div className="spinner" style={{ width: '1rem', height: '1rem' }} /> : 'Post Comment'}
+                                                </button>
                                             </div>
                                         </div>
+                                    </div>
+                                </form>
+                            )}
+
+                            {/* Comments list */}
+                            {commentsLoading ? (
+                                <div className="loading-container"><div className="spinner" /></div>
+                            ) : comments.length === 0 ? (
+                                <div className="empty-state" style={{ padding: '2rem' }}>
+                                    <p>No comments yet. Be the first to share your thoughts!</p>
+                                </div>
+                            ) : (
+                                <div>
+                                    {comments.map(comment => (
+                                        <CommentItem
+                                            key={comment.id}
+                                            comment={comment}
+                                            user={user}
+                                            project={project}
+                                            onDelete={handleDeleteComment}
+                                            onReply={(id) => { setReplyTo(id); document.querySelector('.comment-textarea')?.focus(); }}
+                                        />
                                     ))}
                                 </div>
                             )}
-                        </div>
+                        </section>
                     </div>
 
-                    {/* Team Members */}
-                    {project.team_members && project.team_members.length > 0 && (
+                    {/* Sidebar */}
+                    <aside>
+                        {/* Status card */}
                         <div className="sidebar-card">
-                            <h3>Team Members</h3>
-                            {project.team_members.map((member, idx) => (
-                                <div key={idx} className="team-member">
-                                    <div className="team-member-avatar">
-                                        {member.avatar ? <img src={member.avatar} alt={member.username} /> : (member.username || 'U')[0].toUpperCase()}
-                                    </div>
-                                    <div>
-                                        <div className="team-member-name">{member.first_name || member.username || 'Member'} {member.last_name || ''}</div>
-                                        <div className="team-member-role">{member.role || 'Contributor'}</div>
-                                    </div>
+                            <div className="stat-row">
+                                <span className="stat-label">Status</span>
+                                <span className="status-badge-active">
+                                    <span className="status-pulse" />
+                                    {(project.status || 'ACTIVE').toUpperCase()}
+                                </span>
+                            </div>
+                            {project.level && (
+                                <div className="stat-row">
+                                    <span className="stat-label">Difficulty</span>
+                                    <span className="stat-value">{project.level}</span>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            )}
+                            {project.github_url && (
+                                <div className="stat-row">
+                                    <span className="stat-label">GitHub</span>
+                                    <a href={project.github_url} target="_blank" rel="noopener noreferrer" className="stat-value" style={{ color: 'var(--primary)' }}>
+                                        View Repo ↗
+                                    </a>
+                                </div>
+                            )}
+                            <div style={{ paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <motion.button
+                                    className={`btn btn-primary btn-full ${upvoteAnimating ? 'upvote-animate' : ''}`}
+                                    onClick={handleUpvote}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontVariationSettings: upvoted ? "'FILL' 1" : "'FILL' 0" }}>star</span>
+                                    {upvoted ? 'Upvoted' : 'Star Project'} ({upvoteCount})
+                                </motion.button>
 
-                    {/* Tags */}
-                    {project.tags && project.tags.length > 0 && (
-                        <div className="sidebar-card">
-                            <h3>Technologies</h3>
-                            <div className="tech-tags">
-                                {(Array.isArray(project.tags) ? project.tags : (typeof project.tags === 'string' ? project.tags.split(',') : [])).map((tag, i) => {
-                                    const tagName = typeof tag === 'object' ? (tag.name || JSON.stringify(tag)) : tag;
-                                    return (
-                                        <span key={i} className="tech-tag">{tagName}</span>
-                                    );
-                                })}
+                                {isOwner && (
+                                    <>
+                                        <button className="btn btn-outline btn-full" onClick={() => navigate(`/submit?edit=${id}`)}>
+                                            <span className="material-symbols-outlined">edit</span> Edit Project
+                                        </button>
+                                        <button className="btn btn-danger btn-full btn-sm" onClick={handleDelete}>
+                                            <span className="material-symbols-outlined">delete</span> Delete
+                                        </button>
+                                    </>
+                                )}
+
+                                {user && !isOwner && !isMember && (
+                                    <div style={{ marginTop: '0.5rem' }}>
+                                        <textarea
+                                            className="form-textarea"
+                                            placeholder="Why do you want to join?"
+                                            value={joinMessage}
+                                            onChange={(e) => setJoinMessage(e.target.value)}
+                                            rows={2}
+                                            style={{ marginBottom: '0.5rem', minHeight: '80px' }}
+                                        />
+                                        <button className="btn btn-outline btn-full" onClick={handleJoin} disabled={joiningLoading}>
+                                            {joiningLoading ? <div className="spinner" style={{ width: '1rem', height: '1rem' }} /> : (
+                                                <>
+                                                    <span className="material-symbols-outlined">group_add</span> Request to Join
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {isOwner && pendingRequests.length > 0 && (
+                                    <div style={{ marginTop: '1.5rem' }}>
+                                        <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--outline)', marginBottom: '0.75rem' }}>Pending Requests</h4>
+                                        {pendingRequests.map(req => (
+                                            <div key={req.id} className="sidebar-card" style={{ padding: '0.75rem', marginBottom: '0.5rem', background: 'rgba(255,255,255,0.02)' }}>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>
+                                                    @{req.user_username || `User #${req.user_id}`}
+                                                </div>
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--outline)', marginBottom: '0.5rem' }}>{req.message}</p>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button className="btn btn-primary btn-sm" style={{ flex: 1, fontSize: '0.7rem' }} onClick={() => handleRequestAction(req.id, 'accepted')}>Accept</button>
+                                                    <button className="btn btn-outline btn-sm" style={{ flex: 1, fontSize: '0.7rem' }} onClick={() => handleRequestAction(req.id, 'declined')}>Reject</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    )}
-                </aside>
+
+                        {/* Team Members */}
+                        {project.team_members && project.team_members.length > 0 && (
+                            <div className="sidebar-card">
+                                <h3>Team Members</h3>
+                                {project.team_members.map((member, idx) => (
+                                    <div key={idx} className="team-member">
+                                        <div className="team-member-avatar">
+                                            {member.avatar ? <img src={member.avatar} alt={member.username} /> : (member.username || 'U')[0].toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <div className="team-member-name">{member.first_name || member.username || 'Member'} {member.last_name || ''}</div>
+                                            <div className="team-member-role">{member.role || 'Contributor'}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Tags */}
+                        {project.tags && project.tags.length > 0 && (
+                            <div className="sidebar-card">
+                                <h3>Technologies</h3>
+                                <div className="tech-tags">
+                                    {(Array.isArray(project.tags) ? project.tags : (typeof project.tags === 'string' ? project.tags.split(',') : [])).map((tag, i) => {
+                                        const tagName = typeof tag === 'object' ? (tag.name || JSON.stringify(tag)) : tag;
+                                        return (
+                                            <span key={i} className="tech-tag">{tagName}</span>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </aside>
+                </div>
             </div>
         </div>
     );
 }
 
 function CommentItem({ comment, user, project, onDelete, onReply }) {
-    const isOwner = project && (comment.user_id === project.owner_id || comment.user_id === project.owner);
-    const isMember = project?.team_members?.some(m => m.user_id === comment.user_id || m.id === comment.user_id);
-    const canDelete = user && (comment.user_id === user.id || user.id === project?.owner_id);
+    const isOwner = project && (Number(comment.user_id) === Number(project.owner_id) || Number(comment.user_id) === Number(project.owner));
+    const isMember = project?.team_members?.some(m => Number(m.user_id) === Number(comment.user_id) || Number(m.id) === Number(comment.user_id));
+    const canDelete = user && (Number(comment.user_id) === Number(user.id) || Number(user.id) === Number(project?.owner_id));
 
     return (
         <div className="comment-item-wrapper">
@@ -466,3 +505,4 @@ function CommentItem({ comment, user, project, onDelete, onReply }) {
         </div>
     );
 }
+

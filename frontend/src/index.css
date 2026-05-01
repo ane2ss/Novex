@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
 
 /* ======================== */
 /* CSS Variables / Design Tokens (Stitch Dark Theme) */
@@ -91,7 +91,7 @@ html {
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--background);
   color: var(--on-background);
   line-height: 1.6;
@@ -444,7 +444,7 @@ img {
 
 .page-content {
   flex: 1;
-  padding-top: 5rem;
+  padding-top: 4.5rem;
 }
 
 .container {
@@ -916,18 +916,18 @@ img {
 .project-card {
   display: flex;
   align-items: flex-start;
-  gap: 2rem;
-  padding: 1.5rem;
-  background: var(--surface-container-lowest);
-  border-radius: var(--radius-lg);
+  gap: 1.25rem;
+  padding: 1.1rem 1.25rem;
+  background: transparent;
+  border-radius: 0.875rem;
   cursor: pointer;
-  transition: var(--transition-slow);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(70, 69, 85, 0.15);
 }
 
 .project-card:hover {
-  background: var(--surface-container-low);
-  transform: translateY(-2px);
+  background: transparent;
+  transform: none;
 }
 
 .project-card-thumb {
@@ -2139,6 +2139,24 @@ img {
 
 .upvote-animate {
   animation: upvoteBounce 0.4s ease;
+}
+
+@keyframes upvote-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.25) translateY(-3px);
+  }
+
+  70% {
+    transform: scale(0.93);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ======================== */

@@ -68,9 +68,12 @@ def start_worker():
                 )
             )
             channel = connection.channel()
-            channel.queue_declare(queue="notifications", durable=True)
+            channel.exchange_declare(exchange='events', exchange_type='fanout', durable=True)
+            result = channel.queue_declare(queue="project_service_events", durable=True)
+            queue_name = result.method.queue
+            channel.queue_bind(exchange='events', queue=queue_name)
             channel.basic_qos(prefetch_count=1)
-            channel.basic_consume(queue="notifications", on_message_callback=callback)
+            channel.basic_consume(queue=queue_name, on_message_callback=callback)
             print("Project Service Worker started. Waiting for messages...")
             channel.start_consuming()
         except Exception as e:

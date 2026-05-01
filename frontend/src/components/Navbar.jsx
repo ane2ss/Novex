@@ -77,8 +77,8 @@ export default function Navbar({ user, logout }) {
             }}>
                 {/* Left: Brand + nav links */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                    <Link to="/" style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.04em', color: '#fff', textDecoration: 'none' }}>
-                        Novex
+                    <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                        <img src="/logo.png" alt="Novex" style={{ height: '4rem', width: 'auto', objectFit: 'contain' }} />
                     </Link>
                     <div style={{ display: 'flex', gap: '0.25rem' }}>
                         {[

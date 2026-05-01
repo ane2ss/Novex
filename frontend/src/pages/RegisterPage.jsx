@@ -54,10 +54,7 @@ export default function RegisterPage({ register }) {
                 <div className="auth-wrapper">
                     <div className="auth-brand">
                         <div className="auth-brand-logo">
-                            <div className="auth-brand-icon">
-                                <span className="material-symbols-outlined">hexagon</span>
-                            </div>
-                            <span className="auth-brand-name">Novex</span>
+                            <img src="/logo.png" alt="Novex" style={{ height: '2.5rem', width: 'auto', objectFit: 'contain' }} />
                         </div>
                         <h1>Create Account</h1>
                         <p>Join the next generation of creators and innovators.</p>

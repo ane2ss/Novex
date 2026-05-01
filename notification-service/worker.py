@@ -42,6 +42,13 @@ def callback(ch, method, properties, body):
         else:
             target_user_id = None
 
+        # Skip notification if the actor is the project owner (self-action)
+        actor_id = data.get("user_id")
+        if target_user_id and actor_id and int(target_user_id) == int(actor_id):
+            print(f"Skipping self-notification: {event_type} by user {actor_id}")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return
+
         if target_user_id:
             message, project_id = get_message(event_type, data)
             Notification.objects.create(
@@ -72,9 +79,12 @@ def start_worker():
                 )
             )
             channel = connection.channel()
-            channel.queue_declare(queue="notifications", durable=True)
+            channel.exchange_declare(exchange='events', exchange_type='fanout', durable=True)
+            result = channel.queue_declare(queue="notification_service_events", durable=True)
+            queue_name = result.method.queue
+            channel.queue_bind(exchange='events', queue=queue_name)
             channel.basic_qos(prefetch_count=1)
-            channel.basic_consume(queue="notifications", on_message_callback=callback)
+            channel.basic_consume(queue=queue_name, on_message_callback=callback)
             print("Worker started. Waiting for messages...")
             channel.start_consuming()
         except Exception as e:
