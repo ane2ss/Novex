@@ -126,10 +126,11 @@ RABBITMQ_PASS=rabbitpass123
 
 <table>
   <tr>
-    <td align="center"><b>Kennouche Aness</b></td>
-    <td align="center"><b>Bouter Mouna</b></td>
     <td align="center"><b>Salamani Samy</b></td>
     <td align="center"><b>Megdoud Massilia</b></td>
+    <td align="center"><b>Kennouche Aness</b></td>
+    <td align="center"><b>Bouter Mouna</b></td>
+
   </tr>
 </table>
 
