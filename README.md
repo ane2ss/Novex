@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="novexlogo.png" alt="Novex" width="140"/>
+ <img src="frontend/public/logo.png" alt="Novex" width="140"/>
 </p>
 
 <h1 align="center">Novex</h1>
@@ -136,7 +136,7 @@ RABBITMQ_PASS=rabbitpass123
 ---
 
 <p align="center">
-  <img src="novexlogo.png" width="36"/>
+  <img src="frontend/public/logo.png" alt="Novex" width="140"/>
   <br/>
   <sub>Novex — Built with care.</sub>
 </p>
