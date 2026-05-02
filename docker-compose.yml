@@ -1,0 +1,186 @@
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    ports:
+      - "80:80"
+      - "8080:8080" # Traefik Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-rabbitpass123}
+    ports:
+      - "5672:5672"
+      - "15672:15672" # RabbitMQ Management
+
+  consul:
+    image: hashicorp/consul:1.15
+    ports:
+      - "8500:8500"
+
+  frontend:
+    build:
+      context: ./frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+
+  auth-service:
+    build:
+      context: ./auth-service
+    command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      consul:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`localhost`) && PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8000"
+
+  interaction-service:
+    build:
+      context: ./interaction-service
+    command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      consul:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.interaction.rule=Host(`localhost`) && PathPrefix(`/api/interactions`)"
+      - "traefik.http.routers.interaction.entrypoints=web"
+      - "traefik.http.services.interaction.loadbalancer.server.port=8000"
+
+  notification-service:
+    build:
+      context: ./notification-service
+    command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      consul:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notification.rule=Host(`localhost`) && PathPrefix(`/api/notifications`)"
+      - "traefik.http.routers.notification.entrypoints=web"
+      - "traefik.http.services.notification.loadbalancer.server.port=8000"
+
+  notification-worker:
+    build:
+      context: ./notification-service
+    command: ["python", "worker.py"]
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      consul:
+        condition: service_started
+
+  project-service:
+    build:
+      context: ./project-service
+    command: ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      consul:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.project.rule=Host(`localhost`) && PathPrefix(`/api/projects`)"
+      - "traefik.http.routers.project.entrypoints=web"
+      - "traefik.http.services.project.loadbalancer.server.port=8000"
+
+  project-worker:
+    build:
+      context: ./project-service
+    command: ["python", "worker.py"]
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgrespassword
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      consul:
+        condition: service_started
+
+volumes:
+  postgres_data:
