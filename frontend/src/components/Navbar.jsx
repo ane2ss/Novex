@@ -10,7 +10,7 @@ export default function Navbar({ user, logout }) {
     const [searchValue, setSearchValue] = useState('');
     const dropdownRef = useRef(null);
     const notifRef = useRef(null);
-    const { notifications, unreadCount, markAsRead, clearAll } = useNotifications();
+    const { notifications, unreadCount, markAsRead } = useNotifications();
 
     useEffect(() => {
         function handleClick(e) {
@@ -52,14 +52,24 @@ export default function Navbar({ user, logout }) {
         return date.toLocaleDateString();
     };
 
+    const navLinkStyle = (to) => ({
+        padding: '0.4rem 0.875rem',
+        borderRadius: '9999px',
+        fontSize: '0.875rem',
+        fontWeight: isActive(to) ? 700 : 500,
+        color: isActive(to) ? '#fff' : 'rgba(199,196,216,0.8)',
+        textDecoration: 'none',
+        background: isActive(to) ? 'rgba(74,64,224,0.35)' : 'transparent',
+        transition: 'all 0.2s',
+    });
+
     return (
-        /* Outer wrapper – full-width fixed bar */
-        <header style={{
+        /* Hidden on mobile — bottom MobileNav takes over */
+        <header className="nvx-desktop-header" style={{
             position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
             padding: '0.75rem 2rem',
             pointerEvents: 'none',
         }}>
-            {/* Floating pill */}
             <nav style={{
                 maxWidth: '72rem',
                 margin: '0 auto',
@@ -85,39 +95,10 @@ export default function Navbar({ user, logout }) {
                             { label: 'Home', to: '/' },
                             { label: 'Explore', to: '/explore' },
                         ].map(({ label, to }) => (
-                            <Link
-                                key={to}
-                                to={to}
-                                style={{
-                                    padding: '0.4rem 0.875rem',
-                                    borderRadius: '9999px',
-                                    fontSize: '0.875rem',
-                                    fontWeight: isActive(to) ? 700 : 500,
-                                    color: isActive(to) ? '#fff' : 'rgba(199,196,216,0.8)',
-                                    textDecoration: 'none',
-                                    background: isActive(to) ? 'rgba(74,64,224,0.35)' : 'transparent',
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                {label}
-                            </Link>
+                            <Link key={to} to={to} style={navLinkStyle(to)}>{label}</Link>
                         ))}
                         {user && (
-                            <Link
-                                to="/submit"
-                                style={{
-                                    padding: '0.4rem 0.875rem',
-                                    borderRadius: '9999px',
-                                    fontSize: '0.875rem',
-                                    fontWeight: isActive('/submit') ? 700 : 500,
-                                    color: isActive('/submit') ? '#fff' : 'rgba(199,196,216,0.8)',
-                                    textDecoration: 'none',
-                                    background: isActive('/submit') ? 'rgba(74,64,224,0.35)' : 'transparent',
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                Create
-                            </Link>
+                            <Link to="/submit" style={navLinkStyle('/submit')}>Create</Link>
                         )}
                     </div>
                 </div>

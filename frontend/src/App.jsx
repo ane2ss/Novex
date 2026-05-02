@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import { useTheme } from './hooks/useTheme';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import MobileNav from './components/MobileNav';
@@ -21,13 +22,13 @@ function ProtectedRoute({ children, user, loading }) {
 
 const AUTH_ROUTES = ['/login', '/register'];
 
-function AppShell({ auth }) {
+function AppShell({ auth, theme, toggleTheme }) {
   const location = useLocation();
   const isAuthRoute = AUTH_ROUTES.includes(location.pathname);
 
   return (
     <div className="page">
-      {!isAuthRoute && <Navbar user={auth.user} logout={auth.logout} />}
+      {!isAuthRoute && <Navbar user={auth.user} logout={auth.logout} theme={theme} toggleTheme={toggleTheme} />}
       <div className={isAuthRoute ? '' : 'page-content'}>
         <Routes>
           <Route path="/" element={<LandingPage user={auth.user} />} />
@@ -61,9 +62,10 @@ function AppShell({ auth }) {
 
 function App() {
   const auth = useAuth();
+  const { theme, toggleTheme } = useTheme();
   return (
     <Router>
-      <AppShell auth={auth} />
+      <AppShell auth={auth} theme={theme} toggleTheme={toggleTheme} />
     </Router>
   );
 }
