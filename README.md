@@ -122,19 +122,6 @@ RABBITMQ_PASS=rabbitpass123
 
 ---
 
-## Contributeurs
-
-<table>
-  <tr>
-    <td align="center"><b>Salamani Samy</b></td>
-    <td align="center"><b>Megdoud Massilia</b></td>
-    <td align="center"><b>Kennouche Aness</b></td>
-    <td align="center"><b>Bouter Mouna</b></td>
-
-  </tr>
-</table>
-
----
 
 <p align="center">
   <img src="frontend/public/logo.png" alt="Novex" width="140"/>
